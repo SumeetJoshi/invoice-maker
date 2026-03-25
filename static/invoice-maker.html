@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Maker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080809;--surface:#0f0f11;--surface2:#141416;
+  --border:#1e1e22;--border2:#2a2a30;
+  --text:#ededf0;--text2:#9595a0;--text3:#55555f;
+  --accent:#7241fa;--accent-dim:rgba(114,65,250,.1);--accent-border:rgba(114,65,250,.25);--accent-light:#a78bfa;
+  --danger:#f87171;--danger-dim:rgba(248,113,113,.1);
+  --green:#34d399;--green-dim:rgba(52,211,153,.1);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;min-width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sidebar-top{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;letter-spacing:-.3px}
+.logo-icon{width:28px;height:28px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px}
+.logo-sub{font-size:11px;color:var(--text3);font-weight:500;margin-top:3px}
+.nav-section{padding:16px 12px 8px}
+.nav-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:0 8px;margin-bottom:4px}
+.nav-item{padding:8px 10px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:10px;border-radius:8px;transition:all .12s;user-select:none}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nav-item.active{color:var(--text);background:var(--accent-dim)}
+.nav-icon{width:18px;text-align:center;font-size:14px;opacity:.7}
+.nav-item.active .nav-icon{opacity:1}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:transparent;margin-left:auto;transition:background .12s}
+.nav-item.active .nav-dot{background:var(--accent)}
+.badge{background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:auto;line-height:16px}
+.sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px}
+.sidebar-footer-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+.main{flex:1;overflow-y:auto;background:var(--bg)}
+.main-inner{max-width:900px;margin:0 auto;padding:40px 48px}
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.page-title{font-size:20px;font-weight:700;letter-spacing:-.5px}
+.page-sub{font-size:13px;color:var(--text3);margin-top:4px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:18px}
+.card-dot{width:7px;height:7px;border-radius:50%}
+.card-dot.to{background:#7241fa}.card-dot.from{background:#34d399}
+.card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)}
+.field{margin-bottom:14px}.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:11.5px;font-weight:500;color:var(--text2);margin-bottom:6px}
+.field input,.field textarea{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:9px 13px;font-size:13px;color:var(--text);font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s;line-height:1.5}
+.field input:hover,.field textarea:hover{border-color:#333338}
+.field input:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(114,65,250,.12)}
+.field input[readonly]{color:var(--text3);cursor:default;background:var(--surface2)}
+.field textarea{resize:vertical;min-height:68px}
+.services-card{margin-bottom:16px}
+.services-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.services-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3)}
+.svc-labels{display:grid;gap:8px;margin-bottom:8px}
+.svc-labels.b2c{grid-template-columns:1fr 130px 34px}
+.svc-labels.b2b{grid-template-columns:1fr 110px 120px 34px}
+.svc-lbl{font-size:11px;color:var(--text3);font-weight:500;padding:0 2px}
+.svc-row{display:grid;gap:8px;align-items:center;margin-bottom:8px}
+.svc-row.b2c{grid-template-columns:1fr 130px 34px}
+.svc-row.b2b{grid-template-columns:1fr 110px 120px 34px}
+.svc-row input{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--text);font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s}
+.svc-row input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(114,65,250,.12)}
+.btn-add{display:flex;align-items:center;gap:5px;background:var(--accent-dim);color:var(--accent-light);border:1px solid var(--accent-border);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s}
+.btn-add:hover{background:rgba(114,65,250,.18)}
+.btn-rm{background:none;border:1px solid var(--border2);color:var(--text3);border-radius:7px;width:34px;height:34px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.btn-rm:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-dim)}
+.actions{display:flex;gap:10px;margin-bottom:32px}
+.btn{display:flex;align-items:center;gap:7px;padding:9px 18px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .12s;letter-spacing:-.1px}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 1px 8px rgba(114,65,250,.35)}
+.btn-primary:hover{background:#6433e8;box-shadow:0 2px 14px rgba(114,65,250,.45)}
+.btn-secondary{background:var(--surface);color:var(--text2);border:1px solid var(--border2)}
+.btn-secondary:hover{color:var(--text);border-color:#333338;background:var(--surface2)}
+.preview-wrap{background:#1a1a1f;border:1px solid var(--border);border-radius:14px;padding:32px;display:flex;justify-content:center;box-shadow:inset 0 2px 20px rgba(0,0,0,.4)}
+.invoice{width:595px;min-height:842px;background:#F9FAFC;position:relative}
+.hist-list{display:flex;flex-direction:column;gap:8px}
+.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:14px;transition:border-color .12s}
+.hist-item:hover{border-color:var(--border2)}
+.hist-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;letter-spacing:.03em}
+.hist-badge.a{background:var(--accent-dim);color:var(--accent-light);border:1px solid var(--accent-border)}
+.hist-badge.b{background:var(--green-dim);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.hist-info{flex:1;min-width:0}
+.hist-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.2px}
+.hist-date{font-size:11px;font-weight:500;color:var(--text3);margin-top:3px;display:flex;align-items:center;gap:6px}
+.hist-date-dot{width:3px;height:3px;border-radius:50%;background:var(--text3);opacity:.5}
+.hist-amt{font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text);margin-right:6px;white-space:nowrap}
+.btn-view{background:none;border:1px solid var(--border2);color:var(--text3);border-radius:7px;padding:5px 13px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap}
+.btn-view:hover{border-color:var(--accent);color:var(--accent-light);background:var(--accent-dim)}
+.btn-del{background:none;border:1px solid var(--border2);color:var(--text3);border-radius:7px;width:32px;height:32px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.btn-del:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-dim)}
+.empty{text-align:center;padding:80px 20px}
+.empty-icon{font-size:40px;margin-bottom:14px;filter:grayscale(1);opacity:.5}
+.empty-text{font-size:14px;color:var(--text3)}
+.empty-sub{font-size:12px;color:var(--text3);margin-top:6px;opacity:.6}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(4px);z-index:100;overflow-y:auto;padding:40px 20px;flex-direction:column;align-items:center}
+.modal.open{display:flex}
+.modal-btns{display:flex;gap:10px;margin-bottom:24px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <div><div>Invoiceapp</div><div class="logo-sub">Billing made simple</div></div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Invoices</div>
+      <div class="nav-item active" onclick="showPage('a',this)"><span class="nav-icon">👤</span>Individual → Co<span class="nav-dot"></span></div>
+      <div class="nav-item" onclick="showPage('b',this)"><span class="nav-icon">🏢</span>Company → Co<span class="nav-dot"></span></div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Records</div>
+      <div class="nav-item" onclick="showPage('h',this)"><span class="nav-icon">🗂</span>History<span class="badge" id="hbadge">0</span></div>
+    </div>
+    <div class="sidebar-footer"><div class="sidebar-footer-dot"></div>Session active</div>
+  </aside>
+  <div class="main"><div class="main-inner">
+
+    <div class="page active" id="page-a">
+      <div class="page-header"><div class="page-title">Individual → Company</div><div class="page-sub">Invoice from you as an individual to a company</div></div>
+      <div class="form-grid">
+        <div class="card">
+          <div class="card-header"><div class="card-dot to"></div><div class="card-title">Billed To</div></div>
+          <div class="field"><label>Company Name</label><input id="a-tn" value="Infosys Limited" oninput="renderA()"></div>
+          <div class="field"><label>Address</label><textarea id="a-ta" oninput="renderA()"></textarea></div>
+          <div class="field"><label>GST Number</label><input id="a-tg" value="29AACCI1681G1ZM" oninput="renderA()"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-dot from"></div><div class="card-title">From — You</div></div>
+          <div class="field"><label>Your Name</label><input id="a-fn" value="Shylesh Monceey" oninput="renderA()"></div>
+          <div class="field"><label>Address</label><textarea id="a-fa" oninput="renderA()"></textarea></div>
+          <div class="field"><label>PAN Card</label><input value="DKBPS5468G" readonly></div>
+        </div>
+      </div>
+      <div class="card services-card">
+        <div class="services-header"><div class="services-title">Services</div><button class="btn-add" onclick="addA()">＋ Add Row</button></div>
+        <div class="svc-labels b2c"><span class="svc-lbl">Description</span><span class="svc-lbl">Amount (₹)</span><span></span></div>
+        <div id="a-rows"></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="save('a')">Save to History</button>
+        <button class="btn btn-secondary" onclick="exportPDF('a')">↓ Export PDF</button>
+      </div>
+      <div class="preview-wrap"><div class="invoice" id="inv-a"></div></div>
+    </div>
+
+    <div class="page" id="page-b">
+      <div class="page-header"><div class="page-title">Company → Company</div><div class="page-sub">Tax invoice from your company to another company</div></div>
+      <div class="form-grid">
+        <div class="card">
+          <div class="card-header"><div class="card-dot to"></div><div class="card-title">Billed To</div></div>
+          <div class="field"><label>Company Name</label><input id="b-tn" value="Tech Mahindra Ltd" oninput="renderB()"></div>
+          <div class="field"><label>Address</label><textarea id="b-ta" oninput="renderB()"></textarea></div>
+          <div class="field"><label>GST Number</label><input id="b-tg" value="27AABCT3518Q1ZE" oninput="renderB()"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-dot from"></div><div class="card-title">From — Your Company</div></div>
+          <div class="field"><label>Company Name</label><input id="b-fn" value="Togepe Tech (OPC) Pvt Ltd" oninput="renderB()"></div>
+          <div class="field"><label>Address</label><textarea id="b-fa" oninput="renderB()"></textarea></div>
+          <div class="field"><label>GST Number</label><input id="b-fg" value="29AAKCT4607P1ZL" oninput="renderB()"></div>
+          <div class="field"><label>SAC Code</label><input id="b-sac" value="998314" oninput="renderB()"></div>
+          <div class="field"><label>State Code</label><input id="b-sc" value="29" oninput="renderB()"></div>
+          <div class="field"><label>Company Logo</label><div style="display:flex;align-items:center;gap:10px"><label class="btn-add" style="margin:0;cursor:pointer"><input type="file" id="b-logo" accept="image/*" onchange="uploadLogo(this)" style="display:none">⬆ Upload Logo</label><span id="logo-name" style="font-size:11px;color:var(--text3)">togepe_logo_Small.png</span></div></div>
+        </div>
+      </div>
+      <div class="card services-card">
+        <div class="services-header"><div class="services-title">Services</div><button class="btn-add" onclick="addB()">＋ Add Row</button></div>
+        <div class="svc-labels b2b"><span class="svc-lbl">Description</span><span class="svc-lbl">Duration</span><span class="svc-lbl">Monthly (₹)</span><span></span></div>
+        <div id="b-rows"></div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="save('b')">Save to History</button>
+        <button class="btn btn-secondary" onclick="exportPDF('b')">↓ Export PDF</button>
+      </div>
+      <div class="preview-wrap"><div class="invoice" id="inv-b"></div></div>
+    </div>
+
+    <div class="page" id="page-h">
+      <div class="page-header"><div class="page-title">Invoice History</div><div class="page-sub">Saved invoices from this session</div></div>
+      <div class="hist-list" id="hlist">
+        <div class="empty"><div class="empty-icon">📂</div><div class="empty-text">No invoices saved yet</div><div class="empty-sub">Create and save an invoice to see it here</div></div>
+      </div>
+    </div>
+
+  </div></div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-btns">
+    <button class="btn btn-secondary" onclick="closeModal()">← Back</button>
+    <button class="btn btn-primary" onclick="printModal()">↓ Export PDF</button>
+  </div>
+  <div id="modal-content"></div>
+</div>
+
+<script>
+let LOGO_SRC='data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAATAH0DASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AIyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//9k=';
+
+function uploadLogo(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    LOGO_SRC=e.target.result;
+    document.getElementById('logo-name').textContent=file.name;
+    renderB();
+  };
+  reader.readAsDataURL(file);
+}
+
+const st={aRows:[{d:'',a:''}],bRows:[{d:'',dur:'',m:''}],hist:[],invA:1,invB:1};
+const v=id=>document.getElementById(id)?.value||'';
+const fmt=n=>new Intl.NumberFormat('en-IN').format(Math.round(n));
+const fmtINR=n=>'₹'+fmt(n);
+const today=()=>new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+const moYr=()=>new Date().toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+const pad2=n=>String(n).padStart(2,'0');
+const D=(s,e)=>`font-family:'Inter',sans-serif;font-size:10px;font-weight:${s};color:${e}`;
+const PA=(t,l,w,fw,cl,extra)=>`<span style="position:absolute;top:${t}px;left:${l}px;width:${w}px;${D(fw,cl)};line-height:14px${extra||''}">`;
+
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+function addA(){st.aRows.push({d:'',a:''});renderARows();renderA();}
+function addB(){st.bRows.push({d:'',dur:'',m:''});renderBRows();renderB();}
+function rmA(i){if(st.aRows.length>1){st.aRows.splice(i,1);renderARows();renderA();}}
+function rmB(i){if(st.bRows.length>1){st.bRows.splice(i,1);renderBRows();renderB();}}
+
+function renderARows(){
+  document.getElementById('a-rows').innerHTML=st.aRows.map((r,i)=>`
+  <div class="svc-row b2c">
+    <input value="${r.d}" oninput="st.aRows[${i}].d=this.value;renderA()">
+    <input value="${r.a}" oninput="st.aRows[${i}].a=this.value;renderA()" style="text-align:right">
+    <button class="btn-rm" onclick="rmA(${i})">×</button>
+  </div>`).join('');
+}
+
+function renderBRows(){
+  document.getElementById('b-rows').innerHTML=st.bRows.map((r,i)=>`
+  <div class="svc-row b2b">
+    <input value="${r.d}" oninput="st.bRows[${i}].d=this.value;renderB()">
+    <input value="${r.dur}" oninput="st.bRows[${i}].dur=this.value;renderB()">
+    <input value="${r.m}" oninput="st.bRows[${i}].m=this.value;renderB()" style="text-align:right">
+    <button class="btn-rm" onclick="rmB(${i})">×</button>
+  </div>`).join('');
+}
+
+const HL=(top)=>`<div style="position:absolute;top:${top}px;left:40px;width:515px;height:0;border-top:0.5px solid #D7DAE0"></div>`;
+const VL=(top,left,h)=>`<div style="position:absolute;top:${top}px;left:${left}px;width:0;height:${h}px;border-left:0.5px solid #D7DAE0"></div>`;
+
+function buildA(rows,num){
+  const total=rows.reduce((s,r)=>s+(parseFloat(r.a)||0),0);
+  let items='';
+  rows.forEach((r,i)=>{
+    const y=346+i*34;
+    items+=`<div style="position:absolute;top:${y}px;left:40px;width:420px;${D(600,'#1A1C21')}">${r.d||'—'}</div>
+    <div style="position:absolute;top:${y}px;right:40px;${D(500,'#5E6470')};text-align:right">₹${fmt(parseFloat(r.a)||0)}</div>
+    ${HL(y+24)}`;
+  });
+  // Figma-exact positions (1 row baseline: totalsLine=410, totalTop=425, dueTop=460, payTop=549, memo=765, botLine=803)
+  const totalsLine=346+rows.length*34+30;
+  const totalTop=totalsLine+15;
+  const dueTop=totalTop+35;
+  const payTop=dueTop+89;
+  const memoTop=payTop+216;
+  const botLine=payTop+254;
+
+  const cell=(w,borderL,label,content,pl=0)=>`
+    <div style="width:${w}px;height:140px;border:0.5px solid #D7DAE0;${borderL?'':'border-left:none;'}display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px 0 24px ${pl}px">
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;width:150px">
+        <div style="${D(600,'#1A1C21')}">${label}</div>
+        ${content}
+      </div>
+    </div>`;
+
+  return `<div style="position:relative;width:595px;min-height:842px;background:#F9FAFC;overflow:hidden">
+
+  <!-- Title: top:40, left:40; gap:10 between Invoice and month -->
+  <div style="position:absolute;top:40px;left:40px">
+    <div style="${D(600,'#1A1C21')};font-size:12px;text-transform:uppercase;line-height:22px">Invoice</div>
+    <div style="${D(500,'#5E6470')};font-size:11px;letter-spacing:.03em;text-transform:uppercase;line-height:16px;margin-top:2px">${moYr()}</div>
+  </div>
+  <div style="position:absolute;top:40px;right:40px;${D(600,'#1A1C21')};font-size:11px">INV-${pad2(num)}</div>
+
+  <!-- 3-column header: top:104, left:40 (40+38+26) -->
+  <div style="position:absolute;top:104px;left:40px;display:flex;flex-direction:row">
+    ${cell(155,true,'Issued',`
+      <div style="${D(600,'#5E6470')}">${today()}</div>`,10)}
+    ${cell(180,false,'Billed to',`
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="${D(700,'#5E6470')}">${v('a-tn')||'—'}</div>
+        <div style="${D(400,'#5E6470')};font-size:8px;line-height:10px">${v('a-ta').replace(/\n/g,'<br>')}</div>
+        <div style="${D(400,'#5E6470')};font-size:8px;line-height:10px">${v('a-tg')}</div>
+      </div>`)}
+    ${cell(180,false,'From',`
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="${D(600,'#5E6470')}">${v('a-fn')||'—'}</div>
+        <div style="${D(400,'#5E6470')};font-size:8px;line-height:10px">${v('a-fa').replace(/\n/g,'<br>')}</div>
+        <div style="${D(400,'#5E6470')};font-size:8px;line-height:10px">PAN: DKBPS5468G</div>
+      </div>`)}
+  </div>
+
+  <!-- Service / Total Price headers: top:288 -->
+  <div style="position:absolute;top:288px;left:40px;${D(600,'#1A1C21')}">Service</div>
+  <div style="position:absolute;top:288px;right:40px;${D(600,'#1A1C21')};text-align:right">Total Price</div>
+  ${HL(311)}${items}${HL(totalsLine)}
+
+  <!-- Total row -->
+  <div style="position:absolute;top:${totalTop}px;left:352px;${D(600,'#1A1C21')}">Total</div>
+  <div style="position:absolute;top:${totalTop}px;right:40px;${D(500,'#5E6470')};text-align:right">₹${fmt(total)}</div>
+
+  <!-- Amount Due box -->
+  <div style="position:absolute;top:${dueTop}px;left:352px;right:40px;height:34px;border-top:1.5px solid #7C4DFF;border-bottom:1.5px solid #7C4DFF;display:flex;align-items:center;justify-content:space-between">
+    <div style="${D(700,'#7241FA')}">Amount due</div>
+    <div style="${D(700,'#7241FA')}">₹${fmt(total)}</div>
+  </div>
+
+  <!-- Payment Details: top:${payTop} (Figma: dueTop+89) -->
+  <div style="position:absolute;top:${payTop}px;left:38px">
+    <div style="${D(600,'#1A1C21')};margin-bottom:16px">Payment Details</div>
+    <div style="position:relative;width:347px;height:162px">
+      ${PA(0,0,103,400,'#5E6470')}Name on Account :</span>${PA(0,109,199,700,'#000')}Shylesh Monceey</span>
+      ${PA(24,0,75,400,'#5E6470')}Name of Bank :</span>${PA(24,109,84,600,'#000')}HDFC Bank</span>
+      ${PA(48,0,39,400,'#5E6470')}Branch :</span>${PA(48,109,228,700,'#000',';height:42px')}No 1075, 100 Feet Rd, 8th Cross, Appareddipalya, Indiranagar, Bengaluru, Karnataka, India – 560008</span>
+      ${PA(100,0,86,400,'#5E6470')}Account Number :</span>${PA(100,109,138,700,'#000')}50100090346771</span>
+      ${PA(124,0,28,400,'#5E6470')}IFSC :</span>${PA(124,109,110,600,'#000')}HDFC0002777</span>
+      ${PA(148,0,25,400,'#5E6470')}Swift</span>${PA(148,109,147,600,'#000')}HDFCINBBBNG</span>
+    </div>
+  </div>
+
+  <!-- Memo: payTop+216 -->
+  <div style="position:absolute;top:${memoTop}px;left:40px;${D(600,'#1A1C21')}">Thank you for the business!</div>
+
+  <!-- Bottom line: top:803 (payTop+254) -->
+  ${HL(botLine)}
+  </div>`;
+}
+
+function buildB(rows,num){
+  const sub=rows.reduce((s,r)=>s+(parseFloat(r.m)||0),0);
+  const cgst=sub*.09,sgst=sub*.09,total=sub+cgst+sgst;
+  let items='';
+  rows.forEach((r,i)=>{
+    const y=320+i*34,amt=parseFloat(r.m)||0;
+    items+=`<div style="position:absolute;top:${y}px;left:40px;width:280px;${D(700,'#5E6470')}">${r.d||'—'}</div>
+    <div style="position:absolute;top:${y}px;left:342px;${D(500,'#5E6470')}">${r.dur||'—'}</div>
+    <div style="position:absolute;top:${y}px;right:130px;${D(500,'#5E6470')};text-align:right">₹${fmt(amt)}</div>
+    <div style="position:absolute;top:${y}px;right:40px;${D(500,'#5E6470')};text-align:right">₹${fmt(amt)}</div>
+    ${HL(y+30)}`;
+  });
+  // Figma: 1 row → subTop:370, subLine:393, cgst:402, sgst:425, due:453, pay:549, memo:737, bot:803, foot:814
+  const ex=Math.max(0,rows.length-1);
+  const subTop=370+ex*34, subLine=subTop-10, cgstTop=402+ex*34, sgstTop=425+ex*34;
+  const dueTop=453+ex*34, payTop=549+ex*34, memoTop=737+ex*34, botLine=803+ex*34, footTop=814+ex*34;
+
+  const cell=(w,bl,label,content,pl=0)=>`<div style="width:${w}px;height:140px;border:0.5px solid #D7DAE0;${bl?'':'border-left:none;'}display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px 0 24px ${pl}px">
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;width:150px">
+      <div style="${D(600,'#1A1C21')}">${label}</div>${content}
+    </div></div>`;
+
+  return `<div style="position:relative;width:595px;min-height:842px;background:#F9FAFC;overflow:hidden">
+
+  <!-- Title row: top:40, space-between -->
+  <div style="position:absolute;top:40px;left:40px;width:515px;display:flex;flex-direction:row;justify-content:space-between;align-items:flex-start">
+    <div style="display:flex;flex-direction:row;gap:26px;align-items:flex-start">
+      <div>
+        <div style="${D(600,'#1A1C21')};font-size:12px;text-transform:uppercase;line-height:22px">Tax Invoice</div>
+        <div style="${D(500,'#5E6470')};font-size:11px;letter-spacing:.03em;text-transform:uppercase;line-height:16px">${moYr()}</div>
+      </div>
+      <div style="${D(600,'#1A1C21')};font-size:12px;text-transform:uppercase;line-height:22px">Invoice no :${num}</div>
+    </div>
+    <img src="${LOGO_SRC}" style="width:125px;height:20px;object-fit:contain;margin-top:9px">
+  </div>
+
+  <!-- 3-cell bordered header: top:104 (40+38+26) -->
+  <div style="position:absolute;top:104px;left:40px;display:flex;flex-direction:row">
+    ${cell(155,true,'Issued',`<div style="${D(600,'#5E6470')}">${today()}</div>`,10)}
+    ${cell(180,false,'Billed to',`
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="${D(700,'#5E6470')}">${v('b-tn')||'—'}</div>
+        <div style="${D(400,'#5E6470')};font-size:8px;line-height:10px">${v('b-ta').replace(/\n/g,'<br>')}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:2px;margin-top:4px">
+        <div style="${D(700,'#5E6470')}">GST</div>
+        <div style="${D(700,'#5E6470')};font-size:8px;line-height:10px">${v('b-tg')}</div>
+      </div>`)}
+    ${cell(180,false,'From',`
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="${D(600,'#5E6470')}">${v('b-fn')||'—'}</div>
+        <div style="${D(400,'#5E6470')};font-size:8px;line-height:10px">${v('b-fa').replace(/\n/g,'<br>')}</div>
+      </div>
+      <div style="display:flex;flex-direction:row;gap:2px;margin-top:4px">
+        <div style="display:flex;flex-direction:column;gap:2px;margin-right:12px">
+          <div style="${D(600,'#5E6470')}">State code</div>
+          <div style="${D(400,'#5E6470')};font-size:8px;line-height:10px">${v('b-sc')}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="${D(600,'#1A1C21')}">SAC code</div>
+          <div style="${D(400,'#5E6470')};font-size:8px;line-height:10px">${v('b-sac')}</div>
+        </div>
+      </div>`)}
+  </div>
+
+  <!-- Divider: top:254 -->
+  ${HL(254)}
+
+  <!-- Service headers: top:274 -->
+  <div style="position:absolute;top:274px;left:40px;${D(600,'#1A1C21')}">Service</div>
+  <div style="position:absolute;top:274px;left:342px;${D(600,'#1A1C21')}">Duration</div>
+  <div style="position:absolute;top:274px;right:130px;${D(600,'#1A1C21')};text-align:center">Monthly</div>
+  <div style="position:absolute;top:274px;right:40px;${D(600,'#1A1C21')};text-align:right">Total Price</div>
+  <!-- Line below headers: top:304 (274+14+16) -->
+  ${HL(304)}${items}
+
+  <!-- Totals block: left:353 -->
+  <!-- Sub divider: before subtotal -->
+  <div style="position:absolute;top:${subLine}px;left:353px;width:203px;height:0;border-top:0.5px solid #D7DAE0"></div>
+  <div style="position:absolute;top:${subTop}px;left:353px;${D(600,'#1A1C21')}">Subtotal</div>
+  <div style="position:absolute;top:${subTop}px;right:40px;${D(500,'#5E6470')};text-align:right">₹${fmt(sub)}</div>
+  <div style="position:absolute;top:${cgstTop}px;left:353px;${D(600,'#1A1C21')}">CGST (9%)</div>
+  <div style="position:absolute;top:${cgstTop}px;right:40px;${D(500,'#5E6470')};text-align:right">₹${fmt(cgst)}</div>
+  <div style="position:absolute;top:${sgstTop}px;left:353px;${D(600,'#1A1C21')}">SGST (9%)</div>
+  <div style="position:absolute;top:${sgstTop}px;right:40px;${D(500,'#5E6470')};text-align:right">₹${fmt(sgst)}</div>
+  <!-- Due box: top:453, width:203, left:353 -->
+  <div style="position:absolute;top:${dueTop}px;left:353px;width:203px;height:34px;border-top:1.5px solid #7C4DFF;border-bottom:1.5px solid #7C4DFF;display:flex;align-items:center;justify-content:space-between">
+    <div style="${D(700,'#7241FA')}">Amount due</div>
+    <div style="${D(700,'#7241FA')}">₹${fmt(total)}</div>
+  </div>
+
+  <!-- Payment Details: top:549, height:134, rows gap:24 -->
+  <div style="position:absolute;top:${payTop}px;left:38px">
+    <div style="${D(600,'#1A1C21')};margin-bottom:16px">Payment Details</div>
+    <div style="position:relative;width:347px;height:134px">
+      ${PA(0,0,103,400,'#5E6470')}Name on Account :</span>${PA(0,109,199,700,'#000')}Togepe tech (OPC) Pvt Ltd</span>
+      ${PA(24,0,75,400,'#5E6470')}Name of Bank :</span>${PA(24,109,84,600,'#000')}HDFC Bank</span>
+      ${PA(48,0,39,400,'#5E6470')}Branch :</span>${PA(48,109,228,700,'#000',';height:14px')}BILEKAHALLI – J.P NAGAR 4TH PHASE</span>
+      ${PA(72,0,86,400,'#5E6470')}Account Number :</span>${PA(72,109,138,600,'#05070B')}50200084872288</span>
+      ${PA(96,0,28,400,'#5E6470')}IFSC :</span>${PA(96,109,110,600,'#000')}HDFC0002777</span>
+      ${PA(120,0,25,400,'#5E6470')}Swift</span>${PA(120,109,147,600,'#000')}HDFCINBBBNG</span>
+    </div>
+  </div>
+
+  <!-- Memo: top:737 (549+164+24) -->
+  <div style="position:absolute;top:${memoTop}px;left:40px;${D(600,'#1A1C21')}">Thank you for the business!</div>
+
+  <!-- Bottom line: top:803 -->
+  ${HL(botLine)}
+  <!-- Footer: top:814 -->
+  <div style="position:absolute;top:${footTop}px;left:40px;width:515px;display:flex;align-items:center;gap:16px;${D(500,'#5E6470')}">
+    <span style="flex:1">${v('b-fa').replace(/\n/g,', ')}</span>
+    <span>+91 63625 23476</span>
+    <span style="width:0;height:12px;border-left:0.5px solid #D7DAE0"></span>
+    <span>shylesh@npl.live</span>
+  </div>
+  </div>`;
+}
+
+function renderA(){document.getElementById('inv-a').innerHTML=buildA(st.aRows,st.invA);}
+function renderB(){document.getElementById('inv-b').innerHTML=buildB(st.bRows,st.invB);}
+
+// ─── Backend API URL (change if you run on a different port) ─────────────────
+const API = 'http://localhost:5000/api';
+
+// ─── Toast notification ───────────────────────────────────────────────────────
+function toast(msg, ok=true){
+  let el=document.getElementById('_toast');
+  if(!el){
+    el=document.createElement('div');el.id='_toast';
+    el.style.cssText='position:fixed;bottom:28px;left:50%;transform:translateX(-50%);'
+      +'padding:10px 22px;border-radius:10px;font-size:13px;font-weight:600;'
+      +'z-index:9999;transition:opacity .3s;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  el.textContent=msg;
+  el.style.background=ok?'#34d399':'#f87171';
+  el.style.color='#fff';
+  el.style.opacity='1';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.style.opacity='0',2500);
+}
+
+// ─── Build payload for B2C ───────────────────────────────────────────────────
+function b2cPayload(){
+  return {
+    client_name:    v('a-tn'),
+    client_address: v('a-ta'),
+    client_gst:     v('a-tg'),
+    from_name:      v('a-fn'),
+    from_address:   v('a-fa'),
+    from_pan:       'DKBPS5468G',
+    rows: st.aRows.map(r=>({description:r.d, amount:r.a})),
+  };
+}
+
+// ─── Build payload for B2B ───────────────────────────────────────────────────
+function b2bPayload(){
+  return {
+    client_name:    v('b-tn'),
+    client_address: v('b-ta'),
+    client_gst:     v('b-tg'),
+    from_name:      v('b-fn'),
+    from_address:   v('b-fa'),
+    from_gst:       v('b-fg'),
+    sac_code:       v('b-sac'),
+    state_code:     v('b-sc'),
+    rows: st.bRows.map(r=>({description:r.d, duration:r.dur, monthly:r.m})),
+  };
+}
+
+// ─── Save invoice to backend DB ──────────────────────────────────────────────
+async function save(t){
+  const endpoint = t==='a' ? `${API}/invoice/b2c/save` : `${API}/invoice/b2b/save`;
+  const payload  = t==='a' ? b2cPayload() : b2bPayload();
+
+  try {
+    const res  = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if(!res.ok){
+      const errs = data.details ? data.details.join('\n') : data.error;
+      toast('❌ ' + errs, false);
+      return;
+    }
+
+    // update local counter so preview stays in sync
+    if(t==='a') st.invA = data.invoice_num + 1;
+    else         st.invB = data.invoice_num + 1;
+
+    toast(`✅ Saved — INV #${pad2(data.invoice_num)}  (${data.total_fmt})`);
+    loadHistory(); // refresh history tab from server
+  } catch(e){
+    toast('❌ Cannot reach backend. Is app.py running?', false);
+  }
+}
+
+// ─── Export PDF via backend ───────────────────────────────────────────────────
+async function exportPDF(t){
+  const endpoint = t==='a' ? `${API}/invoice/b2c/pdf` : `${API}/invoice/b2b/pdf`;
+  const payload  = t==='a'
+    ? {...b2cPayload(), invoice_num: st.invA}
+    : {...b2bPayload(), invoice_num: st.invB};
+
+  try {
+    const res = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+
+    if(!res.ok){
+      const data = await res.json();
+      toast('❌ ' + (data.error || 'PDF failed'), false);
+      return;
+    }
+
+    // Trigger browser download
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = t==='a' ? `invoice_b2c_${pad2(st.invA)}.pdf` : `invoice_b2b_${pad2(st.invB)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('📄 PDF downloaded!');
+  } catch(e){
+    toast('❌ Cannot reach backend. Is app.py running?', false);
+  }
+}
+
+// ─── History: load from server ────────────────────────────────────────────────
+async function loadHistory(){
+  try {
+    const res  = await fetch(`${API}/invoices`);
+    const data = await res.json();
+    st.hist = data.invoices || [];
+    document.getElementById('hbadge').textContent = st.hist.length || '';
+    renderHist();
+  } catch(e){
+    // backend not reachable — show empty
+    st.hist = [];
+    renderHist();
+  }
+}
+
+function renderHist(){
+  const c=document.getElementById('hlist');
+  if(!st.hist.length){
+    c.innerHTML='<div class="empty"><div class="empty-icon">📂</div><div class="empty-text">No invoices saved yet</div><div class="empty-sub">Create and save an invoice to see it here</div></div>';
+    return;
+  }
+  c.innerHTML=st.hist.map(inv=>`
+  <div class="hist-item">
+    <span class="hist-badge ${inv.type}">${inv.type==='b2c'?'B2C':'B2B'}</span>
+    <div class="hist-info">
+      <div class="hist-name">${inv.client_name}</div>
+      <div class="hist-date"><span>${inv.created_at}</span><span class="hist-date-dot"></span><span>INV #${pad2(inv.invoice_num)}</span></div>
+    </div>
+    <span class="hist-amt">${inv.total_fmt}</span>
+    <button class="btn-view" onclick="viewInv(${inv.id})">View</button>
+    <button class="btn-del"  onclick="delInv(${inv.id})">×</button>
+  </div>`).join('');
+}
+
+async function delInv(id){
+  if(!confirm('Delete this invoice?')) return;
+  try {
+    await fetch(`${API}/invoices/${id}`, {method:'DELETE'});
+    toast('🗑 Invoice deleted');
+    loadHistory();
+  } catch(e){ toast('❌ Delete failed', false); }
+}
+
+async function viewInv(id){
+  // Download the PDF directly
+  window.open(`${API}/invoices/${id}/pdf`, '_blank');
+}
+
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+const INTER='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+function openPrint(html){
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><link href="${INTER}" rel="stylesheet"><style>body{margin:0}</style></head><body>${html}</body></html>`);
+  w.document.close();setTimeout(()=>{w.focus();w.print();},500);
+}
+function printModal(){openPrint(document.getElementById('modal-content').innerHTML);}
+
+// Load history on page start
+loadHistory();
+
+document.getElementById('a-ta').value='Electronics City, Phase 1\nBengaluru, Karnataka 560100';
+document.getElementById('a-fa').value='No 42, 3rd Cross, Indiranagar\nBengaluru, Karnataka 560038';
+document.getElementById('b-ta').value='Plot No 1, Software Units Layout\nHitech City, Hyderabad 500081';
+document.getElementById('b-fa').value='No 1075, 100 Feet Rd, 8th Cross\nIndiranagar, Bengaluru 560008';
+st.aRows=[{d:'UI/UX Design Consulting',a:'45000'},{d:'Prototype Delivery',a:'15000'}];
+st.bRows=[{d:'Software Development Services',dur:'1 Month',m:'120000'},{d:'Technical Project Management',dur:'1 Month',m:'35000'}];
+renderARows();renderBRows();renderA();renderB();
+// Sync invoice counters from server on page load
+fetch(`${API}/counters`).then(r=>r.json()).then(d=>{st.invA=d.inv_a;st.invB=d.inv_b;}).catch(()=>{});
+</script>
+</body>
+</html>
